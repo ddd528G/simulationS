@@ -1,636 +1,122 @@
 <!DOCTYPE html>
-<html lang="uk" class="h-full bg-slate-950 text-slate-100">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Симулятор Файлового Архіватора</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- JSZip CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Простий Симулятор Архівування</title>
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .section { margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea { height: 80px; resize: none; }
+        .btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn:hover { background-color: #219150; }
+        .result-box {
+            background: #eef2f5;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-line;
+            line-height: 1.6;
+        }
     </style>
 </head>
-<body class="min-h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 selection:bg-sky-500 selection:text-white">
+<body>
 
-    <!-- Header -->
-    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-            <div class="flex items-center space-x-3">
-                <div class="p-2 bg-gradient-to-tr from-sky-500 to-indigo-600 rounded-xl shadow-lg shadow-sky-500/20">
-                    <i class="fa-solid fa-box-archive text-xl text-white"></i>
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                        Архівіст PRO
-                    </h1>
-                    <p class="text-xs text-sky-400 font-medium">Інтерактивний симулятор файлового архіватора</p>
-                </div>
-            </div>
+<div class="app-container">
+    <h2>📦 Простий Симулятор Архіватора</h2>
 
-            <!-- Navigation Tabs -->
-            <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
-                <button id="tabCreateBtn" onclick="switchTab('create')" class="px-4 py-1.5 rounded-lg text-white bg-sky-600 transition flex items-center space-x-2">
-                    <i class="fa-solid fa-file-zipper"></i>
-                    <span>Створення архіву</span>
-                </button>
-                <button id="tabExtractBtn" onclick="switchTab('extract')" class="px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center space-x-2">
-                    <i class="fa-solid fa-folder-open"></i>
-                    <span>Розпакування</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
-        <!-- ================= TAB 1: CREATE ARCHIVE ================= -->
-        <div id="tabCreate" class="space-y-8">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                <!-- Left Column: File Manager -->
-                <div class="lg:col-span-7 space-y-4">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-4 border-b border-slate-800">
-                            <div>
-                                <h2 class="text-base font-bold text-slate-100 flex items-center space-x-2">
-                                    <i class="fa-solid fa-folder-tree text-sky-400"></i>
-                                    <span>Файловий менеджер</span>
-                                </h2>
-                                <p class="text-xs text-slate-400 mt-0.5">Оберіть файли прапорцями для пакування в один архів</p>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="openCreateFileModal()" class="text-xs bg-sky-600 hover:bg-sky-500 text-white font-semibold px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 shadow-md shadow-sky-600/20">
-                                    <i class="fa-solid fa-plus"></i>
-                                    <span>Створити файл</span>
-                                </button>
-                                <button onclick="toggleSelectAll()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-3 py-1.5 rounded-lg transition border border-slate-700">
-                                    <i class="fa-solid fa-list-check mr-1"></i> Вибрати всі
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- File List -->
-                        <div id="fileListContainer" class="space-y-2.5 max-h-[360px] overflow-y-auto pr-1 custom-scrollbar">
-                            <!-- Injected by JavaScript -->
-                        </div>
-
-                        <!-- Total Files Info -->
-                        <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                            <span>Всього файлів у системі: <strong id="totalFilesCount" class="text-slate-200">0</strong></span>
-                            <span>Обрано для стиснення: <strong id="selectedFilesCount" class="text-sky-400">0</strong> (<span id="selectedFilesSize">0 B</span>)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column: Settings & Compression Options -->
-                <div class="lg:col-span-5 space-y-6">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
-                        <h2 class="text-base font-bold text-slate-100 flex items-center space-x-2 border-b border-slate-800 pb-3">
-                            <i class="fa-solid fa-sliders text-indigo-400"></i>
-                            <span>Параметри архівування</span>
-                        </h2>
-
-                        <!-- Archive Name -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Назва архіву</label>
-                            <div class="relative">
-                                <input type="text" id="archiveNameInput" value="Мої_документи" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-sky-500 font-mono">
-                                <span class="absolute right-3 top-2 text-xs text-slate-500 font-mono font-bold" id="archiveExtLabel">.zip</span>
-                            </div>
-                        </div>
-
-                        <!-- Compression Algorithm -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Алгоритм стиснення</label>
-                            <div class="grid grid-cols-3 gap-2">
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="algorithm" value="zip" checked onchange="updateAlgoUI()" class="peer sr-only">
-                                    <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center peer-checked:border-sky-500 peer-checked:bg-sky-950/30 transition">
-                                        <div class="text-xs font-bold text-slate-200 peer-checked:text-sky-400">ZIP</div>
-                                        <div class="text-[10px] text-slate-500">Стандартне</div>
-                                    </div>
-                                </label>
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="algorithm" value="rle" onchange="updateAlgoUI()" class="peer sr-only">
-                                    <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center peer-checked:border-amber-500 peer-checked:bg-amber-950/30 transition">
-                                        <div class="text-xs font-bold text-slate-200 peer-checked:text-amber-400">RLE</div>
-                                        <div class="text-[10px] text-slate-500">Текстове</div>
-                                    </div>
-                                </label>
-                                <label class="cursor-pointer">
-                                    <input type="radio" name="algorithm" value="store" onchange="updateAlgoUI()" class="peer sr-only">
-                                    <div class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center peer-checked:border-slate-500 peer-checked:bg-slate-800/50 transition">
-                                        <div class="text-xs font-bold text-slate-200">STORE</div>
-                                        <div class="text-[10px] text-slate-500">Без стиснення</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Password Protection -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
-                                <span>Захист паролем (симуляція)</span>
-                                <i class="fa-solid fa-lock text-amber-400 text-xs"></i>
-                            </label>
-                            <input type="password" id="archivePasswordInput" placeholder="Залиште порожнім, якщо без пароля" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-amber-500">
-                        </div>
-
-                        <!-- Create Archive Button -->
-                        <button onclick="createArchive()" class="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-sky-500/20 transition transform active:scale-95 flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-bolt"></i>
-                            <span>Створити архів</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Compression Results & Analytics -->
-            <div id="resultsSection" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
-                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg">
-                            <i class="fa-solid fa-chart-pie"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-base font-bold text-slate-100">Результат архівування</h3>
-                            <p class="text-xs text-slate-400">Аналітика та порівняльний аналіз розміру</p>
-                        </div>
-                    </div>
-                    <button onclick="downloadArchive()" id="downloadZipBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center space-x-2">
-                        <i class="fa-solid fa-download"></i>
-                        <span>Скачати .ZIP файл</span>
-                    </button>
-                </div>
-
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-                        <div class="text-xs text-slate-400 mb-1">Початковий розмір</div>
-                        <div class="text-xl font-bold text-slate-100" id="resOriginalSize">0 B</div>
-                    </div>
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-                        <div class="text-xs text-slate-400 mb-1">Розмір архіву</div>
-                        <div class="text-xl font-bold text-sky-400" id="resCompressedSize">0 B</div>
-                    </div>
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-                        <div class="text-xs text-slate-400 mb-1">Економія пам'яті</div>
-                        <div class="text-xl font-bold text-emerald-400" id="resSavingsPercent">0%</div>
-                    </div>
-                </div>
-
-                <!-- Visual Bar Chart -->
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs text-slate-400">
-                        <span>Візуальне співвідношення розміру</span>
-                        <span id="chartLabel">0% від оригінального обсягу</span>
-                    </div>
-                    <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-slate-800 flex">
-                        <div id="progressBar" class="h-full bg-gradient-to-r from-sky-500 to-emerald-400 rounded-full transition-all duration-700" style="width: 0%;"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= TAB 2: EXTRACTION ================= -->
-        <div id="tabExtract" class="hidden space-y-6">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl max-w-3xl mx-auto space-y-6">
-                <div class="text-center space-y-2 border-b border-slate-800 pb-6">
-                    <div class="w-12 h-12 bg-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center mx-auto text-xl border border-sky-500/30">
-                        <i class="fa-solid fa-box-open"></i>
-                    </div>
-                    <h2 class="text-lg font-bold text-slate-100">Розпакування та перегляд архіву</h2>
-                    <p class="text-xs text-slate-400 max-w-md mx-auto">
-                        Завантажте згенерований архів у розпакувальник для перевірки його вмісту та цілісності даних.
-                    </p>
-                </div>
-
-                <!-- Archive Input -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">Оберіть створений файл або завантажте з диска</label>
-                        <select id="extractSelectArchive" onchange="handleSelectArchiveToExtract()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-sky-500">
-                            <option value="">-- Оберіть архів із пам'яті програми --</option>
-                        </select>
-                    </div>
-
-                    <div id="extractPasswordBox" class="hidden space-y-1.5">
-                        <label class="block text-xs font-semibold text-amber-400 flex items-center space-x-1">
-                            <i class="fa-solid fa-key"></i>
-                            <span>Цей архів захищено паролем! Введіть пароль:</span>
-                        </label>
-                        <input type="password" id="extractPasswordInput" placeholder="Введіть пароль..." class="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-amber-400">
-                    </div>
-
-                    <button onclick="unpackSelectedArchive()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center space-x-2">
-                        <i class="fa-solid fa-unlock"></i>
-                        <span>Розпакувати архів</span>
-                    </button>
-                </div>
-
-                <!-- Unpacked File List Preview -->
-                <div id="extractedFilesBox" class="hidden space-y-3 pt-4 border-t border-slate-800">
-                    <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Розпаковані файли:</h3>
-                    <div id="extractedFileList" class="space-y-2"></div>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Create File Modal -->
-    <div id="createModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-sm font-bold text-slate-100">Створення текстового файлу</h3>
-                <button onclick="closeCreateFileModal()" class="text-slate-500 hover:text-slate-300">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Назва файлу</label>
-                    <input type="text" id="newFileName" placeholder="замітка" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-sky-500">
-                </div>
-                <div>
-                    <label class="block font-semibold text-slate-300 mb-1">Вміст файлу</label>
-                    <textarea id="newFileContent" rows="5" placeholder="Введіть текст файлу сюди..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-sky-500 font-mono resize-none"></textarea>
-                </div>
-            </div>
-
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeCreateFileModal()" class="px-4 py-2 bg-slate-800 text-slate-300 hover:bg-slate-700 rounded-xl text-xs font-semibold">Скасувати</button>
-                <button onclick="saveNewFile()" class="px-4 py-2 bg-sky-600 text-white hover:bg-sky-500 rounded-xl text-xs font-semibold">Зберегти файл</button>
-            </div>
-        </div>
+    <!-- Створення файлу -->
+    <div class="section">
+        <label for="filename">Назва файлу:</label>
+        <input type="text" id="filename" value="document.txt">
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl border border-slate-800 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-2 z-50">
-        <i class="fa-solid fa-circle-check text-emerald-400 text-base" id="toastIcon"></i>
-        <span id="toastMessage">Повідомлення</span>
+    <div class="section">
+        <label for="filetext">Вміст файлу (для кращого стиснення повторюйте букви):</label>
+        <textarea id="filetext">AAAAAABBBCCCCCDDDD</textarea>
     </div>
 
-    <!-- JavaScript Application Logic -->
-    <script>
-        // Default Files Data
-        let fileSystem = [
-            {
-                id: 1,
-                name: "документ_проєкту.txt",
-                type: "text",
-                content: "Це приклад текстового документа. Для якісного стиснення текстових файлів алгоритми шукають однакові послідовності байтів і замінюють їх коротшими кодами.",
-                selected: true
-            },
-            {
-                id: 2,
-                name: "повторюваний_код.txt",
-                type: "text",
-                content: "AAAAABBBWWWWWWAA11111122222AAAAABBBWWWWWWAA11111122222",
-                selected: true
-            },
-            {
-                id: 3,
-                name: "логотип_компанії.svg",
-                type: "image",
-                content: `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="40" fill="#0ea5e9"/></svg>`,
-                selected: false
-            },
-            {
-                id: 4,
-                name: "скрипт_калькулятора.js",
-                type: "code",
-                content: "function add(a, b) { return a + b; }\nfunction subtract(a, b) { return a - b; }\nconsole.log(add(10, 20));",
-                selected: false
-            }
-        ];
+    <button class="btn" onclick="compressFile()">Створити архів і стиснути</button>
 
-        let createdArchivesMemory = [];
-        let currentGeneratedZipBlob = null;
-        let currentGeneratedFilename = "archive.zip";
+    <!-- Звіт про архів -->
+    <div class="section" style="margin-top: 25px;">
+        <label>Результат архівування:</label>
+        <div class="result-box" id="resultOutput">Натисніть кнопку, щоб побачити результат...</div>
+    </div>
+</div>
 
-        // Helper: UTF-8 Byte Size
-        function getByteSize(str) {
-            return new Blob([str]).size;
+<script>
+function compressFile() {
+    let name = document.getElementById('filename').value.trim() || 'file.txt';
+    let text = document.getElementById('filetext').value;
+
+    if (!text) {
+        alert('Введіть текст для файлу!');
+        return;
+    }
+
+    // Простий алгоритм RLE для стиснення
+    let compressed = '';
+    let count = 1;
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] === text[i + 1]) {
+            count++;
+        } else {
+            compressed += count + text[i];
+            count = 1;
         }
+    }
 
-        // Helper: Format Bytes
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+    let originalSize = text.length;
+    let compressedSize = compressed.length;
+    let savings = (((originalSize - compressedSize) / originalSize) * 100).toFixed(1);
 
-        // Render File List
-        function renderFileList() {
-            const container = document.getElementById('fileListContainer');
-            container.innerHTML = '';
+    // Звіт про результати
+    let output = `📄 Файл: ${name}\n`;
+    output += `------------------------------------\n`;
+    output += `Оригінальний вміст: ${text}\n`;
+    output += `Розмір до стиснення: ${originalSize} символів\n\n`;
+    output += `📦 Архівний вміст (RLE): ${compressed}\n`;
+    output += `Розмір після стиснення: ${compressedSize} символів\n`;
+    output += `------------------------------------\n`;
+    output += `📊 Економія місця: ${savings}%`;
 
-            let totalSelectedSize = 0;
-            let selectedCount = 0;
+    document.getElementById('resultOutput').innerText = output;
+}
+</script>
 
-            fileSystem.forEach(file => {
-                const fileSize = getByteSize(file.content);
-                if (file.selected) {
-                    selectedCount++;
-                    totalSelectedSize += fileSize;
-                }
-
-                let iconClass = "fa-file-lines text-sky-400";
-                if (file.type === 'image') iconClass = "fa-file-image text-emerald-400";
-                if (file.type === 'code') iconClass = "fa-file-code text-amber-400";
-
-                const card = document.createElement('div');
-                card.className = `flex items-center justify-between p-3 rounded-xl border transition ${file.selected ? 'bg-slate-950/80 border-sky-500/50' : 'bg-slate-950/30 border-slate-800'}`;
-                
-                card.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <input type="checkbox" ${file.selected ? 'checked' : ''} onchange="toggleFileSelection(${file.id})" class="w-4 h-4 rounded border-slate-700 bg-slate-900 text-sky-600 focus:ring-sky-500 focus:ring-offset-slate-900 cursor-pointer">
-                        <i class="fa-solid ${iconClass} text-base"></i>
-                        <div>
-                            <div class="text-xs font-semibold text-slate-200">${file.name}</div>
-                            <div class="text-[10px] text-slate-500">${formatBytes(fileSize)}</div>
-                        </div>
-                    </div>
-                    <button onclick="deleteFile(${file.id})" class="text-slate-600 hover:text-red-400 transition text-xs p-1">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                `;
-                container.appendChild(card);
-            });
-
-            document.getElementById('totalFilesCount').textContent = fileSystem.length;
-            document.getElementById('selectedFilesCount').textContent = selectedCount;
-            document.getElementById('selectedFilesSize').textContent = formatBytes(totalSelectedSize);
-        }
-
-        function toggleFileSelection(id) {
-            const file = fileSystem.find(f => f.id === id);
-            if (file) {
-                file.selected = !file.selected;
-                renderFileList();
-            }
-        }
-
-        function toggleSelectAll() {
-            const allSelected = fileSystem.every(f => f.selected);
-            fileSystem.forEach(f => f.selected = !allSelected);
-            renderFileList();
-        }
-
-        function deleteFile(id) {
-            fileSystem = fileSystem.filter(f => f.id !== id);
-            renderFileList();
-            showToast("Файл видалено з системи", "fa-trash", "amber");
-        }
-
-        // Modal Controls
-        function openCreateFileModal() { document.getElementById('createModal').classList.remove('hidden'); }
-        function closeCreateFileModal() { document.getElementById('createModal').classList.add('hidden'); }
-
-        function saveNewFile() {
-            let name = document.getElementById('newFileName').value.trim();
-            const content = document.getElementById('newFileContent').value;
-
-            if (!name) name = "новий_файл";
-            if (!name.includes('.')) name += ".txt";
-
-            fileSystem.push({
-                id: Date.now(),
-                name: name,
-                type: name.endsWith('.js') || name.endsWith('.html') ? 'code' : 'text',
-                content: content,
-                selected: true
-            });
-
-            document.getElementById('newFileName').value = '';
-            document.getElementById('newFileContent').value = '';
-            closeCreateFileModal();
-            renderFileList();
-            showToast("Новий файл успішно створено!", "fa-circle-check", "emerald");
-        }
-
-        // Update Extension Label based on Radio choice
-        function updateAlgoUI() {
-            const algo = document.querySelector('input[name="algorithm"]:checked').value;
-            const extLabel = document.getElementById('archiveExtLabel');
-            if (algo === 'zip') extLabel.textContent = '.zip';
-            else if (algo === 'rle') extLabel.textContent = '.rle';
-            else extLabel.textContent = '.tar';
-        }
-
-        // Create Archive Logic
-        async function createArchive() {
-            const selectedFiles = fileSystem.filter(f => f.selected);
-            if (selectedFiles.length === 0) {
-                showToast("Будь ласка, оберіть хоча б один файл!", "fa-triangle-exclamation", "amber");
-                return;
-            }
-
-            const algo = document.querySelector('input[name="algorithm"]:checked').value;
-            let archiveName = document.getElementById('archiveNameInput').value.trim() || "архів";
-            const password = document.getElementById('archivePasswordInput').value;
-
-            let originalTotalSize = selectedFiles.reduce((acc, f) => acc + getByteSize(f.content), 0);
-            let compressedTotalSize = 0;
-
-            if (algo === 'zip') {
-                archiveName += ".zip";
-                const zip = new JSZip();
-                selectedFiles.forEach(f => zip.file(f.name, f.content));
-                
-                currentGeneratedZipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
-                compressedTotalSize = currentGeneratedZipBlob.size;
-            } else if (algo === 'rle') {
-                archiveName += ".rle";
-                // RLE Simulation on concatenated contents
-                let combined = selectedFiles.map(f => f.content).join('');
-                let rleEncoded = runLengthEncode(combined);
-                compressedTotalSize = getByteSize(rleEncoded);
-                currentGeneratedZipBlob = new Blob([rleEncoded], { type: "text/plain" });
-            } else {
-                archiveName += ".tar";
-                // STORE method: header size overhead
-                compressedTotalSize = originalTotalSize + (selectedFiles.length * 32);
-                currentGeneratedZipBlob = new Blob([selectedFiles.map(f => f.content).join('\n')], { type: "text/plain" });
-            }
-
-            currentGeneratedFilename = archiveName;
-
-            // Calculate metrics
-            let savingsPct = originalTotalSize > 0 ? (((originalTotalSize - compressedTotalSize) / originalTotalSize) * 100).toFixed(1) : 0;
-
-            // Save to internal memory for Extraction Tab
-            createdArchivesMemory.push({
-                name: archiveName,
-                algo: algo,
-                password: password,
-                files: selectedFiles.map(f => ({ name: f.name, content: f.content, size: getByteSize(f.content) }))
-            });
-            updateExtractDropdown();
-
-            // Render Stats Section
-            document.getElementById('resultsSection').classList.remove('hidden');
-            document.getElementById('resOriginalSize').textContent = formatBytes(originalTotalSize);
-            document.getElementById('resCompressedSize').textContent = formatBytes(compressedTotalSize);
-            
-            const savingsElem = document.getElementById('resSavingsPercent');
-            if (savingsPct >= 0) {
-                savingsElem.textContent = `${savingsPct}%`;
-                savingsElem.className = "text-xl font-bold text-emerald-400";
-            } else {
-                savingsElem.textContent = `+${Math.abs(savingsPct)}%`;
-                savingsElem.className = "text-xl font-bold text-amber-400";
-            }
-
-            // Render Progress bar ratio
-            let ratio = originalTotalSize > 0 ? Math.min(100, Math.max(5, (compressedTotalSize / originalTotalSize) * 100)) : 100;
-            document.getElementById('progressBar').style.width = `${ratio}%`;
-            document.getElementById('chartLabel').textContent = `${ratio.toFixed(1)}% від початкового розміру`;
-
-            showToast("Архів успішно створено!", "fa-circle-check", "emerald");
-        }
-
-        // RLE Encoder
-        function runLengthEncode(text) {
-            if (!text) return "";
-            let res = "";
-            let count = 1;
-            for (let i = 1; i < text.length; i++) {
-                if (text[i] === text[i - 1]) count++;
-                else { res += count + text[i - 1]; count = 1; }
-            }
-            res += count + text[text.length - 1];
-            return res;
-        }
-
-        // Download ZIP
-        function downloadArchive() {
-            if (!currentGeneratedZipBlob) return;
-            const url = URL.createObjectURL(currentGeneratedZipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = currentGeneratedFilename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast("Завантаження розпочато", "fa-download", "emerald");
-        }
-
-        // Extraction Tab Logic
-        function switchTab(tab) {
-            if (tab === 'create') {
-                document.getElementById('tabCreate').classList.remove('hidden');
-                document.getElementById('tabExtract').classList.add('hidden');
-                document.getElementById('tabCreateBtn').className = "px-4 py-1.5 rounded-lg text-white bg-sky-600 transition flex items-center space-x-2";
-                document.getElementById('tabExtractBtn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center space-x-2";
-            } else {
-                document.getElementById('tabCreate').classList.add('hidden');
-                document.getElementById('tabExtract').classList.remove('hidden');
-                document.getElementById('tabCreateBtn').className = "px-4 py-1.5 rounded-lg text-slate-400 hover:text-white transition flex items-center space-x-2";
-                document.getElementById('tabExtractBtn').className = "px-4 py-1.5 rounded-lg text-white bg-sky-600 transition flex items-center space-x-2";
-            }
-        }
-
-        function updateExtractDropdown() {
-            const select = document.getElementById('extractSelectArchive');
-            select.innerHTML = '<option value="">-- Оберіть архів із пам\'яті програми --</option>';
-            createdArchivesMemory.forEach((arch, idx) => {
-                select.innerHTML += `<option value="${idx}">${arch.name} (${arch.algo.toUpperCase()}) ${arch.password ? '🔒' : ''}</option>`;
-            });
-        }
-
-        function handleSelectArchiveToExtract() {
-            const idx = document.getElementById('extractSelectArchive').value;
-            const passBox = document.getElementById('extractPasswordBox');
-            if (idx !== "" && createdArchivesMemory[idx] && createdArchivesMemory[idx].password) {
-                passBox.classList.remove('hidden');
-            } else {
-                passBox.classList.add('hidden');
-            }
-        }
-
-        function unpackSelectedArchive() {
-            const idx = document.getElementById('extractSelectArchive').value;
-            if (idx === "") {
-                showToast("Будь ласка, оберіть архів!", "fa-triangle-exclamation", "amber");
-                return;
-            }
-
-            const archive = createdArchivesMemory[idx];
-            if (archive.password) {
-                const enteredPass = document.getElementById('extractPasswordInput').value;
-                if (enteredPass !== archive.password) {
-                    showToast("Невірний пароль архіву!", "fa-xmark", "red");
-                    return;
-                }
-            }
-
-            // Render Extracted List
-            const container = document.getElementById('extractedFileList');
-            container.innerHTML = '';
-
-            archive.files.forEach(f => {
-                const div = document.createElement('div');
-                div.className = "p-3 bg-slate-950 border border-slate-800 rounded-xl flex flex-col space-y-1";
-                div.innerHTML = `
-                    <div class="flex justify-between items-center text-xs font-bold text-slate-200">
-                        <span><i class="fa-solid fa-file text-sky-400 mr-2"></i>${f.name}</span>
-                        <span class="text-slate-500">${formatBytes(f.size)}</span>
-                    </div>
-                    <div class="text-[11px] font-mono text-slate-400 bg-slate-900 p-2 rounded border border-slate-800/80 truncate">
-                        ${f.content}
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-
-            document.getElementById('extractedFilesBox').classList.remove('hidden');
-            showToast("Архів успішно розпаковано!", "fa-unlock", "emerald");
-        }
-
-        // Toast Helper
-        function showToast(message, iconClass, color = "emerald") {
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMessage').textContent = message;
-            document.getElementById('toastIcon').className = `fa-solid ${iconClass} text-${color}-400 text-base`;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-
-        // Initialize Page
-        window.addEventListener('DOMContentLoaded', () => {
-            renderFileList();
-        });
-    </script>
 </body>
 </html>
