@@ -3,111 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Проста симуляція архівування</title>
+    <title>Інтерактивний Симулятор Архівування</title>
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
             margin: 0;
+            padding: 20px;
+            color: #1e293b;
         }
-        .card {
-            background: white;
-            padding: 30px;
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            max-width: 450px;
-            width: 100%;
-            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
         }
-        h2 { color: #1e293b; margin-bottom: 20px; }
-        p { color: #64748b; font-size: 14px; }
+        h2 { text-align: center; margin-top: 0; color: #0f172a; }
         
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        button {
-            padding: 12px;
-            border: 2px solid #e2e8f0;
+        .box {
             background: #f8fafc;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        button:hover {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
-        
-        .result {
-            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
             padding: 15px;
             border-radius: 8px;
-            margin-top: 15px;
-            text-align: left;
-            font-size: 15px;
-            line-height: 1.6;
+            margin-bottom: 20px;
         }
+        .box-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #334155;
+            display: block;
+        }
+        
+        /* Таблиця файлів */
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+        .file-info { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .file-size { color: #64748b; font-size: 13px; font-family: monospace; }
+
+        /* Поля вводу та кнопки */
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        textarea { height: 60px; resize: none; }
+        
+        .btn-add {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-add:hover { background-color: #2563eb; }
+
+        .btn-main {
+            background-color: #10b981;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-main:hover { background-color: #059669; }
+
+        /* Результат */
+        .result-box {
+            background: #0f172a;
+            color: #38bdf8;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-line;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .tab-btn.active { background: #3b82f6; color: white; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>📦 Симулятор архівування</h2>
-    <p>Оберіть файл, щоб побачити, як працює стиснення:</p>
+<div class="container">
+    <h2>📦 Симулятор Файлового Архіватора</h2>
 
-    <div class="btn-group">
-        <button onclick="compress('doc')">📄 Текстовий документ (.txt)</button>
-        <button onclick="compress('photo')">🖼️ Фотографія (.bmp -> .jpg)</button>
-        <button onclick="compress('music')">🎵 Аудіозапис (.wav -> .mp3)</button>
+    <!-- Вкладки режимів -->
+    <div class="tabs">
+        <button class="tab-btn active" id="tab1" onclick="switchTab('create')">1. Створення архіву</button>
+        <button class="tab-btn" id="tab2" onclick="switchTab('unpack')">2. Розпакування</button>
     </div>
 
-    <div id="output" class="result">
-        Оберіть файл вище, щоб проаналізувати результат...
+    <!-- ВКЛАДКА 1: СТВОРЕННЯ АРХІВУ -->
+    <div id="view-create">
+        <!-- Крок 1: Список файлів -->
+        <div class="box">
+            <span class="box-title">📂 Оберіть файли для архівування:</span>
+            <div id="filesList">
+                <!-- Файли додаються скриптом -->
+            </div>
+
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+            <span class="box-title" style="font-size: 13px;">➕ Додати власний текстовий файл:</span>
+            <input type="text" id="newFileName" placeholder="Назва файлу (наприклад: text.txt)">
+            <textarea id="newFileContent" placeholder="Введіть текст файлу (наприклад: AAAAAABBBCCCC)"></textarea>
+            <button class="btn-add" onclick="addCustomFile()">Створити файл</button>
+        </div>
+
+        <!-- Крок 2: Налаштування архіву -->
+        <div class="box">
+            <span class="box-title">⚙️ Налаштування архіву:</span>
+            
+            <label style="font-size: 13px;">Алгоритм стиснення:</label>
+            <select id="algoSelect">
+                <option value="zip">ZIP (Deflate) — Універсальне стиснення</option>
+                <option value="rle">RLE — Текстове повторювальне стиснення</option>
+                <option value="store">STORE / TAR — Без стиснення (Контейнер)</option>
+            </select>
+
+            <label style="font-size: 13px;">Захист паролем (опціонально):</label>
+            <input type="text" id="archivePassword" placeholder="Введіть пароль, якщо потрібно">
+        </div>
+
+        <!-- Кнопка запуску -->
+        <button class="btn-main" onclick="processArchive()">Створити архів</button>
+
+        <!-- Звіт -->
+        <div class="box" style="margin-top: 20px;">
+            <span class="box-title">📊 Результат архівування:</span>
+            <div class="result-box" id="outputReport">Виберіть файли та натисніть "Створити архів"...</div>
+        </div>
+    </div>
+
+    <!-- ВКЛАДКА 2: РОЗПАКУВАННЯ -->
+    <div id="view-unpack" style="display: none;">
+        <div class="box">
+            <span class="box-title">🔓 Перегляд та розпакування архіву:</span>
+            <p style="font-size: 13px; color: #64748b;">Тут можна протестувати введення пароля та витягування файлів із зашифрованого архіву.</p>
+            
+            <label style="font-size: 13px;">Пароль для розпакування:</label>
+            <input type="text" id="unpackPassInput" placeholder="Введіть пароль...">
+            <button class="btn-add" style="width: 100%; padding: 10px;" onclick="unpackArchive()">Розпакувати архів</button>
+        </div>
+
+        <div class="box">
+            <span class="box-title">📄 Вміст архіву:</span>
+            <div class="result-box" id="unpackReport">Спочатку створіть архів на першій вкладці...</div>
+        </div>
     </div>
 </div>
 
 <script>
-function compress(type) {
-    let out = document.getElementById('output');
+// Початковий список файлів у симуляторі
+let files = [
+    { name: "document.txt", size: 1024, type: "text", content: "AAAAAABBBBBCCCCDDDD" },
+    { name: "photo_raw.bmp", size: 20480, type: "media", content: "IMAGE_DATA_1234567890" },
+    { name: "track.wav", size: 40960, type: "media", content: "AUDIO_WAVE_SAMPLES" }
+];
 
-    if (type === 'doc') {
-        out.innerHTML = `
-            <b>Тип:</b> Текстовий документ<br>
-            <b>Тип стиснення:</b> Без втрат (Lossless)<br>
-            <b>Початковий розмір:</b> 100 КБ<br>
-            <b>Після архівування:</b> 30 КБ<br>
-            <b>Економія місця:</b> <span style="color: green; font-weight: bold;">70%</span><br>
-            <i>Текст залишився на 100% точним!</i>
+let createdArchive = null; // Збережені дані останнього створеного архіву
+
+// Відображення списку файлів
+function renderFiles() {
+    let listHtml = '';
+    files.forEach((file, index) => {
+        let icon = file.type === 'text' ? '📄' : '🖼️';
+        listHtml += `
+            <div class="file-item">
+                <div class="file-info">
+                    <input type="checkbox" id="file-${index}" checked>
+                    <span>${icon} ${file.name}</span>
+                </div>
+                <span class="file-size">${file.size} байт</span>
+            </div>
         `;
-    } else if (type === 'photo') {
-        out.innerHTML = `
-            <b>Тип:</b> Фотографія<br>
-            <b>Тип стиснення:</b> З втратами (Lossy)<br>
-            <b>Початковий розмір:</b> 5000 КБ (5 МБ)<br>
-            <b>Після стиснення:</b> 800 КБ<br>
-            <b>Економія місця:</b> <span style="color: green; font-weight: bold;">84%</span><br>
-            <i>Видалено деталі, непомітні для ока.</i>
-        `;
-    } else if (type === 'music') {
-        out.innerHTML = `
-            <b>Тип:</b> Аудіозапис<br>
-            <b>Тип стиснення:</b> З втратами (Lossy)<br>
-            <b>Початковий розмір:</b> 40000 КБ (40 МБ)<br>
-            <b>Після стиснення:</b> 4000 КБ (4 МБ)<br>
-            <b>Економія місця:</b> <span style="color: green; font-weight: bold;">90%</span><br>
-            <i>Видалено надвисокі частоти, які людина не чує.</i>
-        `;
+    });
+    document.getElementById('filesList').innerHTML = listHtml;
+}
+
+// Додавання власного файлу
+function addCustomFile() {
+    let name = document.getElementById('newFileName').value.trim();
+    let content = document.getElementById('newFileContent').value;
+
+    if (!name || !content) {
+        alert('Заповніть назву та вміст файлу!');
+        return;
+    }
+
+    files.push({
+        name: name,
+        size: content.length * 2, // умовний розмір
+        type: 'text',
+        content: content
+    });
+
+    document.getElementById('newFileName').value = '';
+    document.getElementById('newFileContent').value = '';
+    renderFiles();
+}
+
+// Основна функція архівування
+function processArchive() {
+    let selectedFiles = [];
+    files.forEach((file, index) => {
+        let cb = document.getElementById(`file-${index}`);
+        if (cb && cb.checked) {
+            selectedFiles.push(file);
+        }
+    });
+
+    if (selectedFiles.length === 0) {
+        alert('Оберіть хоча б один файл!');
+        return;
+    }
+
+    let algo = document.getElementById('algoSelect').value;
+    let password = document.getElementById('archivePassword').value.trim();
+
+    // Розрахунок початкового розміру
+    let originalTotalSize = 0;
+    selectedFiles.forEach(f => originalTotalSize += f.size);
+
+    // Симуляція стиснення залежно від алгоритму
+    let ratio = 1;
+    if (algo === 'zip') ratio = 0.45;       // ZIP стискає приблизно на 55%
+    else if (algo === 'rle') ratio = 0.60;  // RLE на 40%
+    else ratio = 0.98;                      // STORE майже не змінює розмір
+
+    let compressedTotalSize = Math.round(originalTotalSize * ratio);
+    let savings = (((originalTotalSize - compressedTotalSize) / originalTotalSize) * 100).toFixed(1);
+
+    // Зберігаємо архів для вкладки "Розпакування"
+    createdArchive = {
+        files: selectedFiles,
+        password: password,
+        algo: algo.toUpperCase(),
+        origSize: originalTotalSize,
+        compSize: compressedTotalSize
+    };
+
+    // Формуємо текстовий звіт
+    let report = `📦 АРХІВ СТВОРЕНО УСПІШНО!\n`;
+    report += `------------------------------------\n`;
+    report += `Запаковано файлів: ${selectedFiles.length} шт.\n`;
+    report += `Обраний алгоритм: ${algo.toUpperCase()}\n`;
+    report += `Пароль: ${password ? '🔒 Встановлено' : '🔓 Без пароля'}\n\n`;
+    report += `Розмір до архівування:  ${originalTotalSize} байт\n`;
+    report += `Розмір після стиснення: ${compressedTotalSize} байт\n`;
+    report += `------------------------------------\n`;
+    report += `⚡ Економія дискового простору: ${savings}%\n`;
+
+    document.getElementById('outputReport').innerText = report;
+}
+
+// Розпакування архіву
+function unpackArchive() {
+    let reportBox = document.getElementById('unpackReport');
+
+    if (!createdArchive) {
+        reportBox.innerText = '⚠️ Спочатку створіть архів на вкладці №1!';
+        return;
+    }
+
+    let inputPass = document.getElementById('unpackPassInput').value.trim();
+
+    // Перевірка пароля
+    if (createdArchive.password && inputPass !== createdArchive.password) {
+        reportBox.innerText = '❌ Помилка: Невірний пароль для розпакування!';
+        reportBox.style.color = '#ef4444';
+        return;
+    }
+
+    reportBox.style.color = '#38bdf8';
+    let report = `✅ АРХІВ УСПІШНО РОЗПАКОВАНО!\n`;
+    report += `------------------------------------\n`;
+    report += `Витягнуті файли:\n`;
+    
+    createdArchive.files.forEach(f => {
+        report += `• ${f.name} (${f.size} байт)\n`;
+    });
+
+    reportBox.innerText = report;
+}
+
+// Перемикання вкладок
+function switchTab(tab) {
+    if (tab === 'create') {
+        document.getElementById('view-create').style.display = 'block';
+        document.getElementById('view-unpack').style.display = 'none';
+        document.getElementById('tab1').classList.add('active');
+        document.getElementById('tab2').classList.remove('active');
+    } else {
+        document.getElementById('view-create').style.display = 'none';
+        document.getElementById('view-unpack').style.display = 'block';
+        document.getElementById('tab1').classList.remove('active');
+        document.getElementById('tab2').classList.add('active');
     }
 }
+
+// Початковий запуск
+renderFiles();
 </script>
 
 </body>
