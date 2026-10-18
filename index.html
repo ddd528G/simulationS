@@ -3,118 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Простий Симулятор Архівування</title>
+    <title>Проста симуляція архівування</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f6f8;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
-            padding: 20px;
-            color: #333;
         }
-        .app-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        h2 { text-align: center; color: #2c3e50; }
-        .section { margin-bottom: 20px; }
-        label { font-weight: bold; display: block; margin-bottom: 5px; }
-        input[type="text"], textarea {
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 450px;
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 14px;
+            text-align: center;
         }
-        textarea { height: 80px; resize: none; }
-        .btn {
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            width: 100%;
-            border-radius: 5px;
+        h2 { color: #1e293b; margin-bottom: 20px; }
+        p { color: #64748b; font-size: 14px; }
+        
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
+            transition: 0.2s;
         }
-        .btn:hover { background-color: #219150; }
-        .result-box {
-            background: #eef2f5;
+        button:hover {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        
+        .result {
+            background: #f1f5f9;
             padding: 15px;
-            border-radius: 5px;
-            font-family: monospace;
-            white-space: pre-line;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: left;
+            font-size: 15px;
             line-height: 1.6;
         }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <h2>📦 Простий Симулятор Архіватора</h2>
+<div class="card">
+    <h2>📦 Симулятор архівування</h2>
+    <p>Оберіть файл, щоб побачити, як працює стиснення:</p>
 
-    <!-- Створення файлу -->
-    <div class="section">
-        <label for="filename">Назва файлу:</label>
-        <input type="text" id="filename" value="document.txt">
+    <div class="btn-group">
+        <button onclick="compress('doc')">📄 Текстовий документ (.txt)</button>
+        <button onclick="compress('photo')">🖼️ Фотографія (.bmp -> .jpg)</button>
+        <button onclick="compress('music')">🎵 Аудіозапис (.wav -> .mp3)</button>
     </div>
 
-    <div class="section">
-        <label for="filetext">Вміст файлу (для кращого стиснення повторюйте букви):</label>
-        <textarea id="filetext">AAAAAABBBCCCCCDDDD</textarea>
-    </div>
-
-    <button class="btn" onclick="compressFile()">Створити архів і стиснути</button>
-
-    <!-- Звіт про архів -->
-    <div class="section" style="margin-top: 25px;">
-        <label>Результат архівування:</label>
-        <div class="result-box" id="resultOutput">Натисніть кнопку, щоб побачити результат...</div>
+    <div id="output" class="result">
+        Оберіть файл вище, щоб проаналізувати результат...
     </div>
 </div>
 
 <script>
-function compressFile() {
-    let name = document.getElementById('filename').value.trim() || 'file.txt';
-    let text = document.getElementById('filetext').value;
+function compress(type) {
+    let out = document.getElementById('output');
 
-    if (!text) {
-        alert('Введіть текст для файлу!');
-        return;
+    if (type === 'doc') {
+        out.innerHTML = `
+            <b>Тип:</b> Текстовий документ<br>
+            <b>Тип стиснення:</b> Без втрат (Lossless)<br>
+            <b>Початковий розмір:</b> 100 КБ<br>
+            <b>Після архівування:</b> 30 КБ<br>
+            <b>Економія місця:</b> <span style="color: green; font-weight: bold;">70%</span><br>
+            <i>Текст залишився на 100% точним!</i>
+        `;
+    } else if (type === 'photo') {
+        out.innerHTML = `
+            <b>Тип:</b> Фотографія<br>
+            <b>Тип стиснення:</b> З втратами (Lossy)<br>
+            <b>Початковий розмір:</b> 5000 КБ (5 МБ)<br>
+            <b>Після стиснення:</b> 800 КБ<br>
+            <b>Економія місця:</b> <span style="color: green; font-weight: bold;">84%</span><br>
+            <i>Видалено деталі, непомітні для ока.</i>
+        `;
+    } else if (type === 'music') {
+        out.innerHTML = `
+            <b>Тип:</b> Аудіозапис<br>
+            <b>Тип стиснення:</b> З втратами (Lossy)<br>
+            <b>Початковий розмір:</b> 40000 КБ (40 МБ)<br>
+            <b>Після стиснення:</b> 4000 КБ (4 МБ)<br>
+            <b>Економія місця:</b> <span style="color: green; font-weight: bold;">90%</span><br>
+            <i>Видалено надвисокі частоти, які людина не чує.</i>
+        `;
     }
-
-    // Простий алгоритм RLE для стиснення
-    let compressed = '';
-    let count = 1;
-    for (let i = 0; i < text.length; i++) {
-        if (text[i] === text[i + 1]) {
-            count++;
-        } else {
-            compressed += count + text[i];
-            count = 1;
-        }
-    }
-
-    let originalSize = text.length;
-    let compressedSize = compressed.length;
-    let savings = (((originalSize - compressedSize) / originalSize) * 100).toFixed(1);
-
-    // Звіт про результати
-    let output = `📄 Файл: ${name}\n`;
-    output += `------------------------------------\n`;
-    output += `Оригінальний вміст: ${text}\n`;
-    output += `Розмір до стиснення: ${originalSize} символів\n\n`;
-    output += `📦 Архівний вміст (RLE): ${compressed}\n`;
-    output += `Розмір після стиснення: ${compressedSize} символів\n`;
-    output += `------------------------------------\n`;
-    output += `📊 Економія місця: ${savings}%`;
-
-    document.getElementById('resultOutput').innerText = output;
 }
 </script>
 
